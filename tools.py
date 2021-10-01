@@ -2,6 +2,31 @@ import numpy as np
 import cv2
 
 
+def create_gamma_table(gamma):
+    table = np.zeros(256)
+    for i in range(256):
+        table[i] = pow(i/255, gamma)*255
+    return table
+
+
+def gamma_transform_table(origin_img,table):
+    img = origin_img.copy()
+    rows, cols, ch = img.shape
+    for x in range(rows):
+        for y in range(cols):
+            img[x,y] = table[img[x,y]]
+    return img
+
+
+def gamma_transform(origin_img,gamma):
+    img = origin_img.copy()
+    rows, cols, ch = img.shape
+    for x in range(rows):
+        for y in range(cols):
+            img[x,y] = 255*(pow(img[x, y]/255, gamma))
+    return img
+
+
 def replace_convex_area(img_bg, img_fg, dst_points, shrink=1):
     rows, cols, ch = img_fg.shape
     # ！！！重要提醒！！！
@@ -12,7 +37,7 @@ def replace_convex_area(img_bg, img_fg, dst_points, shrink=1):
         ]
     )
     # 凸多边形区域填充黑色
-    cv2.fillConvexPoly(img_bg, dst_points.astype(int), 0, 16)
+    cv2.fillConvexPoly(img_bg, dst_points.astype(int), 0)
     # 寻找单应性矩阵,通过四个点求八个解加上一个约束即为
     H, status = cv2.findHomography(origin_points, dst_points)
     # 生成和img_bg大小一致的单应性矩阵变换后图像
