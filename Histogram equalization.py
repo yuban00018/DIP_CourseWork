@@ -1,7 +1,6 @@
-import itertools
 import time
 import cv2
-import numpy as np
+import tools
 import matplotlib.pyplot as plt
 
 path = "./img/"
@@ -10,22 +9,6 @@ path = "./img/"
 def cv2_equalize_hist(origin):
     img = origin.copy()
     img = cv2.equalizeHist(img)
-    return img
-
-
-def my_equalize_hist(origin):
-    r_k = np.zeros(256)
-    img = origin.copy()
-    rows, cols = img.shape
-    for x in range(rows):
-        for y in range(cols):
-            # 统计r
-            r_k[img[x, y]] += 1
-    # 一定要注意，取整要在最外面进行，否则小数点后面的数差距会非常大
-    lut = np.array(list(itertools.accumulate(list(np.array(r_k * 255 / (rows * cols)))))).astype(np.uint8)
-    for x in range(rows):
-        for y in range(cols):
-            img[x, y] = lut[img[x, y]]
     return img
 
 
@@ -46,9 +29,9 @@ show_hist(baby_img, "baby img")
 show_hist(hill_img, "hill img")
 
 time_start = time.time()
-school_img_my = my_equalize_hist(school_img)
-baby_img_my = my_equalize_hist(baby_img)
-hill_img_my = my_equalize_hist(hill_img)
+school_img_my = tools.equalize_hist(school_img)
+baby_img_my = tools.equalize_hist(baby_img)
+hill_img_my = tools.equalize_hist(hill_img)
 time_end = time.time()
 show_hist(school_img_my, "school img my")
 show_hist(baby_img_my, "baby img my")

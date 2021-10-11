@@ -1,29 +1,97 @@
 import numpy as np
 import cv2
+import itertools
+
+
+def gen_mean_kernel(size):
+    kernel = np.zeros([size,size])
+    for i in range(size):
+        for j in range(size):
+            kernel[i,j]=1
+    return kernel/(size**2)
+
+
+def gen_gaussian_kernel(kernel_size=3, sigma=0):
+    kernel = np.zeros([kernel_size, kernel_size])
+    center = kernel_size // 2
+    # 2c^2
+    s = 2 * (sigma ** 2)
+    sum_val = 0
+    for i in range(kernel_size):
+        for j in range(kernel_size):
+            # 到中心的距离
+            x = i - center
+            y = j - center
+            kernel[i, j] = np.exp(-(x ** 2 + y ** 2) / s)
+            sum_val += kernel[i, j]
+    return kernel / sum_val
+
+
+def median_filter(origin, kernel_size=3, stride=1):
+    img = origin.copy()
+    output = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            if i + kernel_size > output.shape[0] or j + kernel_size > output.shape[1]:
+                continue
+            area = img[i:i + kernel_size, j:j + kernel_size].reshape(kernel_size * kernel_size)
+            sorted_pixel = np.sort(area)
+            mid = kernel_size*kernel_size/2
+            output[i+1, j+1] = sorted_pixel[int(mid)]
+    return output
+
+
+def mean_filter(origin, kernel=np.array(np.array(
+    [[1, 1, 1], [1, 1, 1], [1, 1, 1]]) / 9, dtype=np.float32), stride=1):
+    img = origin.copy()
+    output = np.zeros((img.shape[0], img.shape[1]),dtype=np.uint8)
+    for i in range(output.shape[0]):
+        for j in range(output.shape[1]):
+            if i + kernel.shape[0] > output.shape[0] or j + kernel.shape[1] > output.shape[1]:
+                continue
+            if i+1 <= img.shape[0] and j+1 <= img.shape[1]:
+                output[i+1, j+1] = (img[i:i + kernel.shape[0], j:j + kernel.shape[1]] * kernel).sum().astype(int)
+    return output
+
+
+def equalize_hist(origin):
+    r_k = np.zeros(256)
+    img = origin.copy()
+    rows, cols = img.shape
+    for x in range(rows):
+        for y in range(cols):
+            # 统计r
+            r_k[img[x, y]] += 1
+    # 一定要注意，取整要在最外面进行，否则小数点后面的数差距会非常大
+    lut = np.array(list(itertools.accumulate(list(np.array(r_k * 255 / (rows * cols)))))).astype(np.uint8)
+    for x in range(rows):
+        for y in range(cols):
+            img[x, y] = lut[img[x, y]]
+    return img
 
 
 def create_gamma_table(gamma):
     table = np.zeros(256)
     for i in range(256):
-        table[i] = pow(i/255, gamma)*255
+        table[i] = pow(i / 255, gamma) * 255
     return table
 
 
-def gamma_transform_table(origin_img,table):
+def gamma_transform_table(origin_img, table):
     img = origin_img.copy()
     rows, cols, ch = img.shape
     for x in range(rows):
         for y in range(cols):
-            img[x,y] = table[img[x,y]]
+            img[x, y] = table[img[x, y]]
     return img
 
 
-def gamma_transform(origin_img,gamma):
+def gamma_transform(origin_img, gamma):
     img = origin_img.copy()
     rows, cols, ch = img.shape
     for x in range(rows):
         for y in range(cols):
-            img[x,y] = 255*(pow(img[x, y]/255, gamma))
+            img[x, y] = 255 * (pow(img[x, y] / 255, gamma))
     return img
 
 
