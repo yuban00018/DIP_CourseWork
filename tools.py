@@ -3,6 +3,46 @@ import cv2
 import itertools
 
 
+def sobel(origin,x,y):
+    img = origin.copy()
+    output = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
+    kernel_y = np.array([[-1,-2,-1],[0,0,0],[1,2,1]])
+    kernel_x = np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
+    for i in range(output.shape[0]):
+        for j in range(output.shape[1]):
+            if i + kernel_x.shape[0] > output.shape[0] or j + kernel_x.shape[1] > output.shape[1]:
+                continue
+            if i+1 <= img.shape[0] and j+1 <= img.shape[1]:
+                num = (img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_x * x +\
+                       img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_y * y)\
+                    .sum().astype(int)
+                if num <= 0:
+                    output[i+1, j+1] = 0
+                elif num >= 255:
+                    output[i+1, j+1] = 255
+                else:
+                    output[i+1, j+1] = num
+    return output
+
+
+def laplacian(origin, kernel=np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]), stride=1):
+    img = origin.copy()
+    output = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
+    for i in range(output.shape[0]):
+        for j in range(output.shape[1]):
+            if i + kernel.shape[0] > output.shape[0] or j + kernel.shape[1] > output.shape[1]:
+                continue
+            if i+1 <= img.shape[0] and j+1 <= img.shape[1]:
+                num = (img[i:i + kernel.shape[0], j:j + kernel.shape[1]] * kernel).sum().astype(int)
+                if num <= 0:
+                    output[i+1, j+1] = 0
+                elif num >= 255:
+                    output[i+1, j+1] = 255
+                else:
+                    output[i+1, j+1] = num
+    return output
+
+
 def gen_mean_kernel(size):
     kernel = np.zeros([size,size])
     for i in range(size):
@@ -44,7 +84,7 @@ def median_filter(origin, kernel_size=3, stride=1):
 def mean_filter(origin, kernel=np.array(np.array(
     [[1, 1, 1], [1, 1, 1], [1, 1, 1]]) / 9, dtype=np.float32), stride=1):
     img = origin.copy()
-    output = np.zeros((img.shape[0], img.shape[1]),dtype=np.uint8)
+    output = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
     for i in range(output.shape[0]):
         for j in range(output.shape[1]):
             if i + kernel.shape[0] > output.shape[0] or j + kernel.shape[1] > output.shape[1]:
