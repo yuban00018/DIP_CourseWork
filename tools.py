@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 import itertools
 
 
-def ifourier(dft_shift):
+def cvt_hsi(origin):
+    img = origin.copy()
+    return img
+
+
+def inverse_fourier(dft_shift):
     return cv2.idft(np.fft.ifftshift(dft_shift), flags=cv2.DFT_REAL_OUTPUT)
 
 

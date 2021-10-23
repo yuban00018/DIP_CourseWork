@@ -25,7 +25,7 @@ mask[half_row + 15:half_row + 40, half_col + 11:half_col + 15] = 00
 dft, shift = tools.fourier(man_noise_img)
 tools.plt_show("Spectrum of the noised graph", 20 * np.log(cv2.magnitude(shift[:, :, 0], shift[:, :, 1])))
 shift = shift * mask
-result = tools.ifourier(shift)
+result = tools.inverse_fourier(shift)
 
 tools.plt_show("Spectrum of the processed noised graph", 20 * np.log(cv2.magnitude(shift[:, :, 0], shift[:, :, 1])))
 tools.plt_show("Results of frequency domain filtering", result)
