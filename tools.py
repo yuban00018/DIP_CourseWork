@@ -4,9 +4,67 @@ import matplotlib.pyplot as plt
 import itertools
 
 
-def cvt_hsi(origin):
-    img = origin.copy()
-    return img
+def show_hist(img, name):
+    plt.figure(name)
+    plt.title(name)
+    arr = img.flatten()
+    plt.hist(arr, bins=256, facecolor='blue', alpha=0.75, density=True)
+    plt.show()
+
+
+def cvt_hsi2bgr(origin):
+    output = np.zeros(origin.shape)
+    for x in range(origin.shape[0]):
+        for y in range(origin.shape[1]):
+            h,s,i = origin[x][y]
+            h,s,i = h * 360, s, i/255
+            b,g,r = 0,0,0
+            # RG扇区
+            if 0 <= h < 120:
+                b = i * (1 - s)
+                r = i * (1 + (s * np.cos(np.radians(h)) / np.cos(np.radians(60 - h))))
+                g = 3 * i - (b + r)
+            # GB扇区
+            elif 120 <= h < 240:
+                h -= 120
+                r = i * (1 - s)
+                g = i * (1 + (s * np.cos(np.radians(h)) / np.cos(np.radians(60 - h))))
+                b = 3 * i - (r + g)
+            # BR扇区
+            elif 240 <= h < 360:
+                h -= 240
+                g = i * (1 - s)
+                b = i * (1 + (s * np.cos(np.radians(h)) / np.cos(np.radians(60 - h))))
+                r = 3 * i - (g + b)
+            output[x][y] = b*255, g*255, r*255
+    return output.astype(np.uint8)
+
+
+def cvt_bgr2hsi(origin):
+    with np.errstate(divide='ignore', invalid='ignore'):
+        bgr = np.int32(cv2.split(origin))
+
+        blue = bgr[0]
+        green = bgr[1]
+        red = bgr[2]
+
+        intensity = np.divide(blue + green + red, 3)
+
+        minimum = np.minimum(np.minimum(red, green), blue)
+        # 饱和度
+        saturation = 1 - 3 * np.divide(minimum, red + green + blue)
+
+        sqrt_result = np.sqrt(((red - green) * (red - green)) + ((red - blue) * (green - blue)))
+
+        if (green >= blue).any():
+            hue = np.arccos((1/2 * ((red-green) + (red - blue)) / sqrt_result))
+        else:
+            hue = 2*np.pi - np.arccos((1/2 * ((red-green) + (red - blue)) / sqrt_result))
+
+        hue = hue/(2*np.pi)
+
+        hsi = cv2.merge((hue, saturation, intensity))
+        return hsi
 
 
 def inverse_fourier(dft_shift):
@@ -39,7 +97,7 @@ def sobel(origin,x,y):
             if i + kernel_x.shape[0] > output.shape[0] or j + kernel_x.shape[1] > output.shape[1]:
                 continue
             if i+1 <= img.shape[0] and j+1 <= img.shape[1]:
-                num = (img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_x * x +\
+                num = (img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_x * x +
                        img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_y * y)\
                     .sum().astype(int)
                 if num <= 0:
