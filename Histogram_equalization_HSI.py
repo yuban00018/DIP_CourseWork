@@ -3,7 +3,7 @@ import tools
 import numpy as np
 path = "./img/"
 
-stream_img = cv2.imread(path+"stream.jpg")
+stream_img = cv2.imread(path+"test.jpg")
 stream_hsi = tools.cvt_bgr2hsi(stream_img.copy())
 tools.show_hist(stream_hsi[:,:,2],"light before")
 stream_hsi[:,:,2] = tools.equalize_hist(stream_hsi[:,:,2].astype(np.uint8))

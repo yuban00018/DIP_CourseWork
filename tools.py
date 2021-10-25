@@ -16,9 +16,9 @@ def cvt_hsi2bgr(origin):
     output = np.zeros(origin.shape)
     for x in range(origin.shape[0]):
         for y in range(origin.shape[1]):
-            h,s,i = origin[x][y]
-            h,s,i = h * 360, s, i/255
-            b,g,r = 0,0,0
+            h, s, i = origin[x][y]
+            h, s, i = h * 360, s, i / 255
+            b, g, r = 0, 0, 0
             # RG扇区
             if 0 <= h < 120:
                 b = i * (1 - s)
@@ -36,7 +36,23 @@ def cvt_hsi2bgr(origin):
                 g = i * (1 - s)
                 b = i * (1 + (s * np.cos(np.radians(h)) / np.cos(np.radians(60 - h))))
                 r = 3 * i - (g + b)
-            output[x][y] = b*255, g*255, r*255
+            # 还原出来的值可能会超范围，需要额外判定
+            b = b * 255
+            g = g * 255
+            r = r * 255
+            if b > 255:
+                b = 255
+            if g > 255:
+                g = 255
+            if r > 255:
+                r = 255
+            if b < 0:
+                b = 0
+            if g < 0:
+                g = 0
+            if r < 0:
+                r = 0
+            output[x][y] = b, g, r
     return output.astype(np.uint8)
 
 
@@ -57,11 +73,11 @@ def cvt_bgr2hsi(origin):
         sqrt_result = np.sqrt(((red - green) * (red - green)) + ((red - blue) * (green - blue)))
 
         if (green >= blue).any():
-            hue = np.arccos((1/2 * ((red-green) + (red - blue)) / sqrt_result))
+            hue = np.arccos((1 / 2 * ((red - green) + (red - blue)) / sqrt_result))
         else:
-            hue = 2*np.pi - np.arccos((1/2 * ((red-green) + (red - blue)) / sqrt_result))
+            hue = 2 * np.pi - np.arccos((1 / 2 * ((red - green) + (red - blue)) / sqrt_result))
 
-        hue = hue/(2*np.pi)
+        hue = hue / (2 * np.pi)
 
         hsi = cv2.merge((hue, saturation, intensity))
         return hsi
@@ -72,40 +88,40 @@ def inverse_fourier(dft_shift):
 
 
 def plt_show(title, img, cmap="gray"):
-    plt.imshow(img,cmap="gray")
-    plt.title(title),plt.xticks([]),plt.yticks([])
+    plt.imshow(img, cmap="gray")
+    plt.title(title), plt.xticks([]), plt.yticks([])
     plt.show()
 
 
 def fourier(img):
     # 离散傅里叶变换
-    dft = cv2.dft(np.float32(img),flags=cv2.DFT_COMPLEX_OUTPUT)
+    dft = cv2.dft(np.float32(img), flags=cv2.DFT_COMPLEX_OUTPUT)
     # 离散傅里叶变换后如果想让直流分量在输出图像的中心，需要将结果沿两个方向平移
     dft_shift = np.fft.fftshift(dft)
     # 构建振幅的公式
-    magnitude_spectrum = 20*np.log(cv2.magnitude(dft_shift[:,:,0],dft_shift[:,:,1]))
-    return magnitude_spectrum,dft_shift
+    magnitude_spectrum = 20 * np.log(cv2.magnitude(dft_shift[:, :, 0], dft_shift[:, :, 1]))
+    return magnitude_spectrum, dft_shift
 
 
-def sobel(origin,x,y):
+def sobel(origin, x, y):
     img = origin.copy()
     output = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
-    kernel_y = np.array([[-1,-2,-1],[0,0,0],[1,2,1]])
-    kernel_x = np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
+    kernel_y = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+    kernel_x = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
     for i in range(output.shape[0]):
         for j in range(output.shape[1]):
             if i + kernel_x.shape[0] > output.shape[0] or j + kernel_x.shape[1] > output.shape[1]:
                 continue
-            if i+1 <= img.shape[0] and j+1 <= img.shape[1]:
+            if i + 1 <= img.shape[0] and j + 1 <= img.shape[1]:
                 num = (img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_x * x +
-                       img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_y * y)\
+                       img[i:i + kernel_x.shape[0], j:j + kernel_x.shape[1]] * kernel_y * y) \
                     .sum().astype(int)
                 if num <= 0:
-                    output[i+1, j+1] = 0
+                    output[i + 1, j + 1] = 0
                 elif num >= 255:
-                    output[i+1, j+1] = 255
+                    output[i + 1, j + 1] = 255
                 else:
-                    output[i+1, j+1] = num
+                    output[i + 1, j + 1] = num
     return output
 
 
@@ -116,23 +132,23 @@ def laplacian(origin, kernel=np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]), st
         for j in range(output.shape[1]):
             if i + kernel.shape[0] > output.shape[0] or j + kernel.shape[1] > output.shape[1]:
                 continue
-            if i+1 <= img.shape[0] and j+1 <= img.shape[1]:
+            if i + 1 <= img.shape[0] and j + 1 <= img.shape[1]:
                 num = (img[i:i + kernel.shape[0], j:j + kernel.shape[1]] * kernel).sum().astype(int)
                 if num <= 0:
-                    output[i+1, j+1] = 0
+                    output[i + 1, j + 1] = 0
                 elif num >= 255:
-                    output[i+1, j+1] = 255
+                    output[i + 1, j + 1] = 255
                 else:
-                    output[i+1, j+1] = num
+                    output[i + 1, j + 1] = num
     return output
 
 
 def gen_mean_kernel(size):
-    kernel = np.zeros([size,size])
+    kernel = np.zeros([size, size])
     for i in range(size):
         for j in range(size):
-            kernel[i,j]=1
-    return kernel/(size**2)
+            kernel[i, j] = 1
+    return kernel / (size ** 2)
 
 
 def gen_gaussian_kernel(kernel_size=3, sigma=0):
@@ -160,8 +176,8 @@ def median_filter(origin, kernel_size=3, stride=1):
                 continue
             area = img[i:i + kernel_size, j:j + kernel_size].reshape(kernel_size * kernel_size)
             sorted_pixel = np.sort(area)
-            mid = kernel_size*kernel_size/2
-            output[i+1, j+1] = sorted_pixel[int(mid)]
+            mid = kernel_size * kernel_size / 2
+            output[i + 1, j + 1] = sorted_pixel[int(mid)]
     return output
 
 
@@ -173,8 +189,8 @@ def mean_filter(origin, kernel=np.array(np.array(
         for j in range(output.shape[1]):
             if i + kernel.shape[0] > output.shape[0] or j + kernel.shape[1] > output.shape[1]:
                 continue
-            if i+1 <= img.shape[0] and j+1 <= img.shape[1]:
-                output[i+1, j+1] = (img[i:i + kernel.shape[0], j:j + kernel.shape[1]] * kernel).sum().astype(int)
+            if i + 1 <= img.shape[0] and j + 1 <= img.shape[1]:
+                output[i + 1, j + 1] = (img[i:i + kernel.shape[0], j:j + kernel.shape[1]] * kernel).sum().astype(int)
     return output
 
 
