@@ -34,9 +34,9 @@ school_img_cv2 = cv2_equalize_hist(school_img)
 baby_img_cv2 = cv2_equalize_hist(baby_img)
 hill_img_cv2 = cv2_equalize_hist(hill_img)
 time_end = time.time()
-show_hist(school_img_cv2, "school img cv2")
-show_hist(baby_img_cv2, "baby img cv2")
-show_hist(hill_img_cv2, "hill img cv2")
+tools.show_hist(school_img_cv2, "school img cv2")
+tools.show_hist(baby_img_cv2, "baby img cv2")
+tools.show_hist(hill_img_cv2, "hill img cv2")
 print("cv2 equalize hist: ", time_end - time_start, "s")
 
 
