@@ -4,6 +4,23 @@ import matplotlib.pyplot as plt
 import itertools
 
 
+def basic_global_threshold(img, delta):
+    copy = img.copy()
+    t = int(copy.sum() / copy.shape[0] / copy.shape[1])
+    while True:
+        g1 = np.where(copy > t)
+        g2 = np.where(copy <= t)
+        m1 = copy[g1].sum() / len(g1[0])
+        m2 = copy[g2].sum() / len(g2[0])
+        t1 = int(0.5 * (m1 + m2))
+        if abs(t1 - t) < delta:
+            t = t1
+            break
+        else:
+            t = t1
+    return t
+
+
 def show_hist(img, name):
     plt.figure(name)
     plt.title(name)
