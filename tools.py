@@ -1,17 +1,63 @@
-import numpy as np
+import itertools
+
 import cv2
 import matplotlib.pyplot as plt
-import itertools
+import numpy as np
+
+
+def o_tsu(img):
+    copy = img.copy()
+    p = np.zeros(256)
+    for x in range(copy.shape[0]):
+        for y in range(copy.shape[1]):
+            p[copy[x, y]] += 1
+    # 像素为某灰度的概率
+    p = p / (copy.shape[0] * copy.shape[1])
+    # 计算累计和p1
+    p1 = np.zeros(256)
+    for k in range(256):
+        for i in range(k+1):
+            p1[k] += p[i]
+    # 计算m和m_global
+    m = np.zeros(256)
+    mg = 0
+    for k in range(0, 256):
+        for i in range(k + 1):
+            m[k] += i * p[i]
+        mg += k * p[k]
+    # 类间方差theta
+    theta = np.zeros(256)
+    for k in range(256):
+        if 0 < p1[k] < 1:
+            # 分母写括号啊啊啊啊啊
+            theta[k] = (mg * p1[k] - m[k]) ** 2 / (p1[k] * (1 - p1[k]))
+        else:
+            theta[k] = 0
+    # 找出最佳的k，兼容多个最优答案
+    best_list = [0]
+    for i in range(0, 256):
+        if theta[best_list[0]] < theta[i]:
+            # 找一个最大的类间方差，说明分类效果最好
+            best_list = [i]
+        elif theta[best_list[0]] == theta[i]:
+            best_list.append(i)
+    result = 0
+    for k in best_list:
+        result += k
+    return int(result / len(best_list))
 
 
 def basic_global_threshold(img, delta):
     copy = img.copy()
     t = int(copy.sum() / copy.shape[0] / copy.shape[1])
     while True:
+        # 使用某一阈值
         g1 = np.where(copy > t)
         g2 = np.where(copy <= t)
+        # 平均灰度
         m1 = copy[g1].sum() / len(g1[0])
         m2 = copy[g2].sum() / len(g2[0])
+        # 计算新阈值，平均灰度的中间点
         t1 = int(0.5 * (m1 + m2))
         if abs(t1 - t) < delta:
             t = t1
